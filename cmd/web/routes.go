@@ -1,18 +1,35 @@
 package main
 
+//this is where route handling happens for the server
+//alice is a middlware package
+//httprouter helps with advance routing
+//the neutered file system exists for directory disabling when serving static files
+
 import (
 	"net/http"
 	"path/filepath"
+
+	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 )
 
-func (app *application) routes() *http.ServeMux {
-	mux := http.NewServeMux()
+func (app *application) routes() http.Handler {
+	router := httprouter.New()
+
+	//custom error handlers for httprouter
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
+
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-	return mux
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	return standard.Then(router)
 }
 
 type neuteredFileSystem struct {
