@@ -13,6 +13,8 @@ import (
 	"github.com/justinas/alice"
 )
 
+// the return value is the chained routers produced by alice
+// the routers are created by httprouter
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 

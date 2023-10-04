@@ -1,12 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"text/template"
 	"time"
 
 	"github.com/alexedwards/scs/mysqlstore"
@@ -50,13 +51,14 @@ func main() {
 	if err != nil {
 		errLog.Fatal(err)
 	}
-
+	// form decoder package to help with large forms
 	formDecoder := form.NewDecoder()
 
 	sessionManger := scs.New()
 	sessionManger.Store = mysqlstore.New(db)
 	sessionManger.Lifetime = 12 * time.Hour
 	sessionManger.Cookie.Secure = true
+
 	//application struct for dependencies
 	app := application{
 		infoLog:        infoLog,
@@ -67,10 +69,18 @@ func main() {
 		sessionManager: sessionManger,
 	}
 
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	srv := &http.Server{
-		Addr:     config.addr,
-		ErrorLog: errLog,
-		Handler:  app.routes(),
+		Addr:         config.addr,
+		ErrorLog:     errLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	infoLog.Printf("Starting server on: %s\n", config.addr)
