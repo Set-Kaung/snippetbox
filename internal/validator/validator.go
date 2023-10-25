@@ -9,12 +9,13 @@ import (
 var EmailRegexp = regexp.MustCompile(`^(?P<name>[a-zA-Z0-9.!#$%&'*+/=?^_ \x60{|}~-]+)@(?P<domain>[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$`)
 
 type Validator struct {
-	FieldErrors map[string]string
+	FieldErrors    map[string]string
+	NonFieldErrors []string
 }
 
 // check whether errors exist
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 func (v *Validator) AddFieldError(key, message string) {
@@ -54,10 +55,16 @@ func PermittedInt(value int, permittedValues ...int) bool {
 	return false
 }
 
+// Checking for minimum characters is satsified
 func MinChars(value string, minChars int) bool {
 	return utf8.RuneCountInString(value) >= minChars
 }
 
+// Checks whether the email is valid or not.
 func Matches(email string, rx *regexp.Regexp) bool {
 	return rx.MatchString(email)
+}
+
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
