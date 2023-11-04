@@ -89,7 +89,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
-	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -164,7 +164,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	form.CheckField(validator.Matches(form.Email, validator.EmailRegexp), "email", "This field must be a valid email address.")
 	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank.")
 	form.CheckField(validator.NotBlank(form.Passowrd), "password", "This field cannot be blank.")
-	fmt.Println(form.Valid(), form.FieldErrors)
+
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
